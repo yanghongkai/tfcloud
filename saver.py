@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-from __future__ import print_funciton
+from __future__ import print_function
 import tensorflow as tf
 
 v1=tf.Variable(tf.constant(1.0, shape=[1]),name="v1")
