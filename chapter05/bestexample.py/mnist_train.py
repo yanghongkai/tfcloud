@@ -14,7 +14,7 @@ REGULARIZATION_RATE=0.0001
 TRAING_STEPS=30000
 MOVING_AVERAGE_DECAY=0.99
 MODEL_SAVE_PATH="mnist-model/"
-MODEL_NAME="mnist_model"
+MODEL_NAME="model.ckpt"
 
 def train(mnist):
     x=tf.placeholder(tf.float32, [None, mnist_inference.INPUT_NODE], name='x-input')
