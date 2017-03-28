@@ -221,7 +221,8 @@ def test_evaluate(sess, inference_op, length_op, inpx, tX, tY):
     # totalLen 18313 tX shape [18313,80]
     numBatch=int((tX.shape[0]-1)/batchSize)+1
     correct_labels=0
-    correct_lines=0
+    correct_lines_1=0
+    correct_lines_2=0
     total_labels=0
     for i in range(numBatch):
         endOff=(i+1)*batchSize
@@ -238,9 +239,24 @@ def test_evaluate(sess, inference_op, length_op, inpx, tX, tY):
             correct=np.sum(np.equal(logit,y_))
             correct_labels+=correct
             total_labels+=sequence_length
+            
+            # 只判断head
+            logit_res=np.where(logit==15)
+            y_res=np.where(y_==15)
+            if len(y_res[0])==1:
+                if y_res[0][0] in logit_res[0] and len(logit_res[0])==1:
+                    correct_lines_1+=1
+
+            if len(y_res[0])==1:
+                if y_res[0][0] in logit_res[0] and len(logit_res[0])<=2:
+                    correct_lines_2+=1
+
 
     accuracy=100.0*correct_labels/float(total_labels)
+    accuracy_head1=100.0*correct_lines_1/float(totalLen)
+    accuracy_head2=100.0*correct_lines_2/float(totalLen)
     print("Total:%d, Correct:%d, Accuracy:%.3f%%" % (total_labels,correct_labels,accuracy))
+    print("TotalLine:%d, Correct_lines_1:%d, Accuracy_head1:%.3f%%, Correct_lines_2:%d, Accuracy_head2:%.3f%%" % (totalLen,correct_lines_1,accuracy_head1,correct_lines_2,accuracy_head2))
 
 
 
