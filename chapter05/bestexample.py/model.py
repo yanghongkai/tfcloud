@@ -68,9 +68,28 @@ class Model:
     def accuracy(self):
         logits=self.inference(self.X,self.regularizer,self.reuse)
         correct_prediction=tf.equal(tf.argmax(logits,1), tf.argmax(self.Y,1))
+        self.correct=tf.reduce_sum(tf.cast(correct_prediction,tf.float32))
         self.accuracy=tf.reduce_mean(tf.cast(correct_prediction,tf.float32))
 
 
+
+
+def test_evaluate(sess,model_op,inpx, inpy,tX,tY):
+    batch_size=FLAGS.batch_size
+    totalLen=tX.shape[0]
+    numBatch=int((tX.shape[0]-1)/batch_size)+1
+    correct_labels=0
+    for i in range(numBatch):
+        endOff=(i+1)*batch_size
+        if endOff>totalLen:
+            endOff=totalLen
+        y=tY[i*batch_size:endOff]
+        correct=sess.run(model_op,feed_dict={inpx:tX[i*batch_size:endOff], inpy:y})
+        #print(correct)
+        correct_labels+=correct
+
+    accuracy=100.0*correct_labels/float(totalLen)
+    print("VALIDATE Total:%d, Correct:%d, Accuracy:%.3f%%" % (totalLen, correct_labels, accuracy))
     
 
 def main(argv=None):
@@ -108,8 +127,9 @@ def main(argv=None):
                 #print("Save Epochs %d, Loss:%g, learning_rate:%f, global_step:%d" % (i,loss_val,learning_rate_,global_step_))
                 saver.save(sess,"mnist-model/model.ckpt",global_step=global_step_)
             if i%1000==0:
-                acc=sess.run(mvalid.accuracy,feed_dict={mvalid.X:mnist.validation.images, mvalid.Y:mnist.validation.labels})
-                print("Validate Epchs %d, Acc:%g" % (i,acc))
+                #acc=sess.run(mvalid.accuracy,feed_dict={mvalid.X:mnist.validation.images, mvalid.Y:mnist.validation.labels})
+                #print("Validate Epchs %d, Acc:%g" % (i,acc))
+                test_evaluate(sess, mvalid.correct, mvalid.X, mvalid.Y,  mnist.validation.images, mnist.validation.labels)
 
 
 

@@ -67,9 +67,26 @@ class Model:
     def accuracy(self):
         logits=self.inference(self.X,self.regularizer,self.reuse)
         correct_prediction=tf.equal(tf.argmax(logits,1), tf.argmax(self.Y,1))
+        self.correct=tf.reduce_sum(tf.cast(correct_prediction,tf.float32))
         self.accuracy=tf.reduce_mean(tf.cast(correct_prediction,tf.float32))
 
 
+def test_evaluate(sess,model_op,inpx, inpy,tX,tY):
+    batch_size=FLAGS.batch_size
+    totalLen=tX.shape[0]
+    numBatch=int((tX.shape[0]-1)/batch_size)+1
+    correct_labels=0
+    for i in range(numBatch):
+        endOff=(i+1)*batch_size
+        if endOff>totalLen:
+            endOff=totalLen
+        y=tY[i*batch_size:endOff]
+        correct=sess.run(model_op,feed_dict={inpx:tX[i*batch_size:endOff], inpy:y})
+        #print(correct)
+        correct_labels+=correct
+
+    accuracy=100.0*correct_labels/float(totalLen)
+    print("VALIDATE Total:%d, Correct:%d, Accuracy:%.3f%%" % (totalLen, correct_labels, accuracy))
     
 
 def main(argv=None):
@@ -82,14 +99,15 @@ def main(argv=None):
     saver=tf.train.Saver(variables_to_restore)
     #saver=tf.train.Saver()
     with tf.Session() as sess:
-        xs,ys=mnist.train.next_batch(FLAGS.batch_size)
+        #xs,ys=mnist.train.next_batch(FLAGS.batch_size)
         ckpt=tf.train.get_checkpoint_state(FLAGS.log_dir)
         if ckpt and ckpt.model_checkpoint_path:
             # reload model
             saver.restore(sess,ckpt.model_checkpoint_path)
             global_step=ckpt.model_checkpoint_path.split('/')[-1].split('-')[-1]
-            acc=sess.run(mvalid.accuracy,feed_dict={mvalid.X:xs, mvalid.Y:ys})
-            print("Epchs %s, Acc:%g" % (global_step,acc))
+            #acc=sess.run(mvalid.accuracy,feed_dict={mvalid.X:mnist.validation.images, mvalid.Y:mnist.validation.labels})
+            #print("Epchs %s, Acc:%g" % (global_step,acc))
+            test_evaluate(sess,mvalid.correct, mvalid.X, mvalid.Y, mnist.validation.images, mnist.validation.labels)
 
 
 if __name__=='__main__':
