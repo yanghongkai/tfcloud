@@ -130,7 +130,11 @@ class Model:
         logits_=tf.reshape(logits,[-1, FLAGS.max_sentence_len, self.distinctTagNum])
         # logits_ shape [100,80,4]
         cross_entropy=tf.nn.sparse_softmax_cross_entropy_with_logits(logits_,Y)
-        cross_entropy_mean=tf.reduce_mean(cross_entropy)
+        # cross_entropy shape [100,80]
+        cross_entropy_sum=tf.reduce_sum(cross_entropy,1)
+        # cross_entropy_sum shape [100]
+        #self.entropy=cross_entropy
+        cross_entropy_mean=tf.reduce_mean(cross_entropy_sum)
         loss=cross_entropy_mean+tf.add_n(tf.get_collection('losses'))
         self.loss=loss
         self.train_op=tf.train.AdamOptimizer(self.learning_rate).minimize(loss,global_step=self.global_step)
@@ -280,10 +284,8 @@ def main(unused_argv):
         # tX shape [18313,80]
         model.loss(X,Y)
         #model.accuracy()
+        #mvalid.loss()
         mvalid.accuracy()
-        #total_loss,loglike=model.loss(X,Y)
-        #train_op=train(total_loss)
-        #test_unary_score,test_sequence_length=model.test_unary_score()
         sv=tf.train.Supervisor(graph=graph,logdir=FLAGS.log_dir)
         with sv.managed_session(master='') as sess:
             training_steps=FLAGS.train_steps
@@ -293,7 +295,7 @@ def main(unused_argv):
                     break
                 try:
 
-                    _, loss_val, learning_rate=sess.run([model.train_op,model.loss,model.learning_rate])
+                    _, loss_val, learning_rate=sess.run([model.train_op,model.loss,model.learning_rate ])
                     if step % 100==0:
                         print("[%d] loss:[%r], learning_rate:%.3f" % (step,loss_val,learning_rate))
                     if step % 1000==0:
