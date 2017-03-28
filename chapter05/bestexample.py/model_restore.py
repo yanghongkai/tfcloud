@@ -11,6 +11,7 @@ from tensorflow.examples.tutorials.mnist import input_data
 
 FLAGS=tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string('data_path','mnist-data', 'data dir')
+tf.app.flags.DEFINE_string('log_dir','mnist-model', 'log dir')
 tf.app.flags.DEFINE_float('learning_rate_base',0.8, 'learning rate')
 tf.app.flags.DEFINE_float('learning_rate_decay',0.99, 'learning rate decay')
 tf.app.flags.DEFINE_float('moving_average_decay',0.99, 'moving average decay')
@@ -61,27 +62,26 @@ class Model:
         cross_entropy_mean=tf.reduce_mean(cross_entropy)
         loss=cross_entropy_mean+tf.add_n(tf.get_collection('losses'))
         self.loss=loss
+        self.train_op=tf.train.GradientDescentOptimizer(self.learning_rate).minimize(loss,global_step=self.global_step)
+
+    def accuracy(self):
+        logits=self.inference(self.X,self.regularizer,self.reuse)
         correct_prediction=tf.equal(tf.argmax(logits,1), tf.argmax(self.Y,1))
         self.accuracy=tf.reduce_mean(tf.cast(correct_prediction,tf.float32))
-        self.train_op=tf.train.GradientDescentOptimizer(self.learning_rate).minimize(loss,global_step=self.global_step)
+
 
     
 
 def main(argv=None):
     mnist=input_data.read_data_sets(FLAGS.data_path,one_hot=True)
+    mvalid=Model(trainMode=False,reuse=None)
+
+    mvalid.accuracy()
     variable_averages=tf.train.ExponentialMovingAverage(FLAGS.moving_average_decay)
     variables_to_restore=variable_averages.variables_to_restore()
     saver=tf.train.Saver(variables_to_restore)
+    #saver=tf.train.Saver()
     with tf.Session() as sess:
-        #m=Model(trainMode=True)
-        mvalid=Model(trainMode=False,reuse=True)
-        #mtest=Model(trainMode=False,reuse=True)
-
-        #m.loss()
-        mvalid.loss()
-        #init_op=tf.initialize_all_variables()
-        #sess.run(init_op)
-        #m.loss()
         xs,ys=mnist.train.next_batch(FLAGS.batch_size)
         ckpt=tf.train.get_checkpoint_state(FLAGS.log_dir)
         if ckpt and ckpt.model_checkpoint_path:
@@ -89,7 +89,7 @@ def main(argv=None):
             saver.restore(sess,ckpt.model_checkpoint_path)
             global_step=ckpt.model_checkpoint_path.split('/')[-1].split('-')[-1]
             acc=sess.run(mvalid.accuracy,feed_dict={mvalid.X:xs, mvalid.Y:ys})
-            print("Epchs %d, Acc:%g" % (global_step,acc))
+            print("Epchs %s, Acc:%g" % (global_step,acc))
 
 
 if __name__=='__main__':

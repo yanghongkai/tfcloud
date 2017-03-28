@@ -61,9 +61,15 @@ class Model:
         cross_entropy_mean=tf.reduce_mean(cross_entropy)
         loss=cross_entropy_mean+tf.add_n(tf.get_collection('losses'))
         self.loss=loss
+        #correct_prediction=tf.equal(tf.argmax(logits,1), tf.argmax(self.Y,1))
+        #self.accuracy=tf.reduce_mean(tf.cast(correct_prediction,tf.float32))
+        self.train_op=tf.train.GradientDescentOptimizer(self.learning_rate).minimize(loss,global_step=self.global_step)
+
+    def accuracy(self):
+        logits=self.inference(self.X,self.regularizer,self.reuse)
         correct_prediction=tf.equal(tf.argmax(logits,1), tf.argmax(self.Y,1))
         self.accuracy=tf.reduce_mean(tf.cast(correct_prediction,tf.float32))
-        self.train_op=tf.train.GradientDescentOptimizer(self.learning_rate).minimize(loss,global_step=self.global_step)
+
 
     
 
@@ -71,10 +77,18 @@ def main(argv=None):
     mnist=input_data.read_data_sets(FLAGS.data_path,one_hot=True)
     m=Model(trainMode=True)
     mvalid=Model(trainMode=False,reuse=True)
-    mtest=Model(trainMode=False,reuse=True)
+    #mtest=Model(trainMode=False,reuse=True)
 
     m.loss()
     mvalid.loss()
+    mvalid.accuracy()
+
+    #train_variables=tf.trainable_variables()
+    #for variable in train_variables:
+    #    print(variable.name)
+    variable_averages=tf.train.ExponentialMovingAverage(FLAGS.moving_average_decay,m.global_step)
+    variable_averages_op=variable_averages.apply(tf.trainable_variables())
+
     init_op=tf.initialize_all_variables()
 
     saver=tf.train.Saver()
@@ -82,18 +96,20 @@ def main(argv=None):
     with tf.Session() as sess:
         sess.run(init_op)
         #m.loss()
-        for i in range(FLAGS.training_steps):
+        for i in range(1,FLAGS.training_steps):
         #for i in range(10):
             xs,ys=mnist.train.next_batch(FLAGS.batch_size)
-            sess.run(m.train_op,feed_dict={m.X:xs, m.Y:ys})
+            _, global_step_, _=sess.run([m.train_op,m.global_step,variable_averages_op],feed_dict={m.X:xs, m.Y:ys})
+            if i%100==0:
+                loss_val, learning_rate_=sess.run([m.loss,m.learning_rate],feed_dict={m.X:xs, m.Y:ys})
+                print("Train Epochs %d, Loss:%g, learning_rate:%f, global_step:%d" % (i,loss_val,learning_rate_,global_step_))
             if i%5000==0:
-                loss_val, learning_rate_,global_step_=sess.run([m.loss,m.learning_rate,m.global_step],feed_dict={m.X:xs, m.Y:ys})
-                print("Epochs %d, Loss:%g, learning_rate:%f, global_step:%d" % (i,loss_val,learning_rate_,global_step_))
-                #print("learning_rate:",learning_rate_)
+                #loss_val, learning_rate_=sess.run([m.loss,m.learning_rate],feed_dict={m.X:xs, m.Y:ys})
+                #print("Save Epochs %d, Loss:%g, learning_rate:%f, global_step:%d" % (i,loss_val,learning_rate_,global_step_))
                 saver.save(sess,"mnist-model/model.ckpt",global_step=global_step_)
             if i%1000==0:
                 acc=sess.run(mvalid.accuracy,feed_dict={mvalid.X:mnist.validation.images, mvalid.Y:mnist.validation.labels})
-                print("Epchs %d, Acc:%g" % (i,acc))
+                print("Validate Epchs %d, Acc:%g" % (i,acc))
 
 
 
