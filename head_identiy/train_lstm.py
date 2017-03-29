@@ -288,7 +288,7 @@ def main(unused_argv):
         #print(tX.shape)
         # tX shape [18313,80]
         vX,vY=do_load_data(FLAGS.valid_data_path)
-        strtime=time.strftime("%Y-%m-%d-%H:%M:%S",time.localtime(time.time()))
+        strtime=time.strftime("%Y-%m-%d-%H-%M-%S",time.localtime(time.time()))
         test_out_name="test-"+strtime
         valid_out_name="valid-"+strtime
         test_out=codecs.open(FLAGS.log_data+"/"+test_out_name, "w+",encoding="utf-8")
