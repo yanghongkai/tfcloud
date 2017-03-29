@@ -222,7 +222,8 @@ def inputs(path):
     return features,label
 
 
-def test_evaluate(sess, inference_op, length_op, inpx, tX, tY, desc, out,step):
+def test_evaluate(sess, inference_op, length_op, inpx, tX, tY, desc, out,step, learning_rate):
+    start=time.time()
     totalEqual=0
     batchSize=FLAGS.batch_size
     totalLen=tX.shape[0]
@@ -263,9 +264,11 @@ def test_evaluate(sess, inference_op, length_op, inpx, tX, tY, desc, out,step):
     accuracy=100.0*correct_labels/float(total_labels)
     accuracy_head1=100.0*correct_lines_1/float(totalLen)
     accuracy_head2=100.0*correct_lines_2/float(totalLen)
-    print("[%s] Total:%d, Correct:%d, Accuracy:%.3f%%" % (desc,total_labels,correct_labels,accuracy))
-    print("[%s] TotalLine:%d, Correct_lines_1:%d, Accuracy_head1:%.3f%%, Correct_lines_2:%d, Accuracy_head2:%.3f%%" % (desc,totalLen,correct_lines_1,accuracy_head1,correct_lines_2,accuracy_head2))
-    out.write("%d\t%.3f\t%.3f\t%.3f\n" % (step,accuracy,accuracy_head1,accuracy_head2))
+    end=time.time()
+    span=end-start
+    print("[%s] Total:%d, Correct:%d, Accuracy:%.3f%%, Time:%.1f" % (desc,total_labels,correct_labels,accuracy,span))
+    print("[%s] TotalLine:%d, Correct_lines_1:%d, Accuracy_head1:%.3f%%, Correct_lines_2:%d, Accuracy_head2:%.3f%%, Time:%.1f" % (desc,totalLen,correct_lines_1,accuracy_head1,correct_lines_2,accuracy_head2,span))
+    out.write("%d\t%.3f\t%.3f\t%.3f\t%.3f\t%.1f\n" % (step,learning_rate,accuracy,accuracy_head1,accuracy_head2,span))
 
 
 
@@ -310,8 +313,8 @@ def main(unused_argv):
                     if step % 100==0:
                         print("[%d] loss:[%r], learning_rate:%.3f" % (step,loss_val,learning_rate))
                     if step % 1000==0:
-                        test_evaluate(sess,mvalid.test_inference, mvalid.test_length, mvalid.inpx,vX,vY,"VALID",valid_out,step)
-                        test_evaluate(sess,mvalid.test_inference, mvalid.test_length, mvalid.inpx,tX,tY,"TEST",test_out,step)
+                        test_evaluate(sess,mvalid.test_inference, mvalid.test_length, mvalid.inpx,vX,vY,"VALID",valid_out,step,learning_rate)
+                        test_evaluate(sess,mvalid.test_inference, mvalid.test_length, mvalid.inpx,tX,tY,"TEST",test_out,step,learning_rate)
                 except KeyboardInterrupt, e:
                     valid_out.close()
                     test_out.close()
