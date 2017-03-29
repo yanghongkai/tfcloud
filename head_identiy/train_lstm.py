@@ -17,11 +17,15 @@ import tensorflow as tf
 from tensorflow.contrib import learn
 import os
 import yfile
+import codecs
+import time
 
 FLAGS=tf.app.flags.FLAGS
 
 tf.app.flags.DEFINE_string('train_data_path',"/Users/tech/code/kcws/train.txt",'Training data dir')
+tf.app.flags.DEFINE_string('valid_data_path',"/Users/tech/code/kcws/train.txt",'valid data dir')
 tf.app.flags.DEFINE_string('test_data_path',"./test.txt",'Test data dir')
+tf.app.flags.DEFINE_string('log_data',"log_data",'log data dir')
 tf.app.flags.DEFINE_string('log_dir',"logs",'The log dir')
 tf.app.flags.DEFINE_string('word2vec_path',"./vec.txt",'the word2vec data path')
 tf.app.flags.DEFINE_integer('max_sentence_len',80,'max num of tokens per query')
@@ -218,7 +222,7 @@ def inputs(path):
     return features,label
 
 
-def test_evaluate(sess, inference_op, length_op, inpx, tX, tY):
+def test_evaluate(sess, inference_op, length_op, inpx, tX, tY, desc, out,step):
     totalEqual=0
     batchSize=FLAGS.batch_size
     totalLen=tX.shape[0]
@@ -259,8 +263,9 @@ def test_evaluate(sess, inference_op, length_op, inpx, tX, tY):
     accuracy=100.0*correct_labels/float(total_labels)
     accuracy_head1=100.0*correct_lines_1/float(totalLen)
     accuracy_head2=100.0*correct_lines_2/float(totalLen)
-    print("Total:%d, Correct:%d, Accuracy:%.3f%%" % (total_labels,correct_labels,accuracy))
-    print("TotalLine:%d, Correct_lines_1:%d, Accuracy_head1:%.3f%%, Correct_lines_2:%d, Accuracy_head2:%.3f%%" % (totalLen,correct_lines_1,accuracy_head1,correct_lines_2,accuracy_head2))
+    print("[%s] Total:%d, Correct:%d, Accuracy:%.3f%%" % (desc,total_labels,correct_labels,accuracy))
+    print("[%s] TotalLine:%d, Correct_lines_1:%d, Accuracy_head1:%.3f%%, Correct_lines_2:%d, Accuracy_head2:%.3f%%" % (desc,totalLen,correct_lines_1,accuracy_head1,correct_lines_2,accuracy_head2))
+    out.write("%d\t%.3f\t%.3f\t%.3f\n" % (step,accuracy,accuracy_head1,accuracy_head2))
 
 
 
@@ -282,6 +287,12 @@ def main(unused_argv):
         #print(tX)
         #print(tX.shape)
         # tX shape [18313,80]
+        vX,vY=do_load_data(FLAGS.valid_data_path)
+        strtime=time.strftime("%Y-%m-%d-%H:%M:%S",time.localtime(time.time()))
+        test_out_name="test-"+strtime
+        valid_out_name="valid-"+strtime
+        test_out=codecs.open(FLAGS.log_data+"/"+test_out_name, "w+",encoding="utf-8")
+        valid_out=codecs.open(FLAGS.log_data+"/"+valid_out_name, "w+",encoding="utf-8")
         model.loss(X,Y)
         #model.accuracy()
         #mvalid.loss()
@@ -299,11 +310,16 @@ def main(unused_argv):
                     if step % 100==0:
                         print("[%d] loss:[%r], learning_rate:%.3f" % (step,loss_val,learning_rate))
                     if step % 1000==0:
-                        test_evaluate(sess,mvalid.test_inference, mvalid.test_length, mvalid.inpx,tX,tY)
+                        test_evaluate(sess,mvalid.test_inference, mvalid.test_length, mvalid.inpx,vX,vY,"VALID",valid_out,step)
+                        test_evaluate(sess,mvalid.test_inference, mvalid.test_length, mvalid.inpx,tX,tY,"TEST",test_out,step)
                 except KeyboardInterrupt, e:
+                    valid_out.close()
+                    test_out.close()
                     sv.saver.save(sess,FLAGS.log_dir+'/model',global_step=step+1)
                     raise e
             sv.saver.save(sess,FLAGS.log_dir+'/finnal-model')
+            valid_out.close()
+            test_out.close()
             sess.close()
 
 
