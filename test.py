@@ -2,19 +2,15 @@
 # coding=utf-8
 
 from __future__ import print_function
-import time
-import datetime
+import matplotlib.pyplot as plt
 
-start=datetime.datetime.now()
-sum=0
-for i in xrange(10000000):
-    sum+=1
-end=datetime.datetime.now()
-span=end-start
-print(span)
-#print(end.seconds)
-
-
+x=[1,2,3,4]
+y=[1,4,9,16]
+plt.plot(x,y,'bo-')
+plt.axis([0,4,0,20]) # 给出坐标轴的范围[xmin,xmax,ymin,ymax]
+plt.xlabel('train steps')
+plt.ylabel('accuracy')
+plt.show()
 
 
 
