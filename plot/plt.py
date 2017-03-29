@@ -47,7 +47,7 @@ def main():
     tline=ax.plot(tx,ty,'r+-',label='test')
     plt.axis([0,len(vx),0,100])
     #plt.title("valid and test accuracy")
-    plt.title("learning_rate_base=0.8,rate_decay=0.99")
+    plt.title("learning_rate_base=0.05,rate_decay=0.99")
     plt.xlabel('train steps (1000)')
     plt.ylabel('accuracy %')
     handles,labels=ax.get_legend_handles_labels()
@@ -58,12 +58,6 @@ def main():
             
 
     
-    #for filename in tfilenames
-    #    plt.plot(x,y,'bo-')
-    #    plt.axis([0,len(x),0,100])
-    #    plt.xlabel('train steps (1000)')
-    #    plt.ylabel('accuracy %')
-    #    plt.show()
 
 if __name__=='__main__':
     main()
