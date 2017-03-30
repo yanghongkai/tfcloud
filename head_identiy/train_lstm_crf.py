@@ -34,7 +34,7 @@ tf.app.flags.DEFINE_integer('num_tags',16,'BMEO')
 tf.app.flags.DEFINE_integer('num_hidden',100,'hidden unit number')
 tf.app.flags.DEFINE_integer('batch_size',100,'num example per mini batch')
 tf.app.flags.DEFINE_integer('train_steps',50000,'training steps')
-tf.app.flags.DEFINE_float("learning_rate_base",0.8,'learning rate base')
+tf.app.flags.DEFINE_float("learning_rate_base",0.1,'learning rate base')
 tf.app.flags.DEFINE_float("learning_rate_decay",0.99,'learning rate decay')
 
 
@@ -155,7 +155,7 @@ class Model:
         #self.train_op=tf.train.AdamOptimizer(self.learning_rate).minimize(loss,global_step=self.global_step)
 
     def accuracy(self):
-        logits, sequence_length=self.inference(self.inpx, self.reuse, trainMode=False)
+        logits, sequence_length=self.inference(self.inpx, reuse=True, trainMode=False)
         #logits shape [100*80,4]
         self.test_unary_score=logits
         self.test_sequence_length=sequence_length
@@ -302,7 +302,7 @@ def main(unused_argv):
     graph=tf.Graph()
     with graph.as_default():
         model=Model(FLAGS.embedding_size,FLAGS.num_tags,FLAGS.word2vec_path,FLAGS.num_hidden,trainMode=True,reuse=False)
-        mvalid=Model(FLAGS.embedding_size,FLAGS.num_tags,FLAGS.word2vec_path,FLAGS.num_hidden,trainMode=False,reuse=True)
+        #mvalid=Model(FLAGS.embedding_size,FLAGS.num_tags,FLAGS.word2vec_path,FLAGS.num_hidden,trainMode=False,reuse=True)
     
         X,Y=inputs(filenames)
         #print(X)
@@ -321,7 +321,8 @@ def main(unused_argv):
         model.loss(X,Y)
         #model.accuracy()
         #mvalid.loss()
-        mvalid.accuracy()
+        #mvalid.accuracy()
+        model.accuracy()
         sv=tf.train.Supervisor(graph=graph,logdir=FLAGS.log_dir)
         with sv.managed_session(master='') as sess:
             training_steps=FLAGS.train_steps
@@ -336,7 +337,7 @@ def main(unused_argv):
                         print("[%d] loss:[%r], learning_rate:%.3f" % (step,loss_val,learning_rate))
                     if step % 1000==0:
                         test_evaluate(sess,mvalid.test_unary_score, mvalid.test_sequence_length, trainsMatrix,  mvalid.inpx,vX,vY,"VALID",valid_out,step,learning_rate)
-                        test_evaluate(sess,mvalid.test_unary_score, mvalid.test_sequence_length, trainsMatrix,  mvalid.inpx,tX,tY,"TEST",test_out,step,learning_rate)
+                        test_evaluate(sess,model.test_unary_score, model.test_sequence_length, trainsMatrix,  model.inpx,tX,tY,"TEST",test_out,step,learning_rate)
                 except KeyboardInterrupt, e:
                     valid_out.close()
                     test_out.close()
