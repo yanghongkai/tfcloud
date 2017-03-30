@@ -314,8 +314,10 @@ def main(unused_argv):
         # tX shape [18313,80]
         vX,vY=do_load_data(FLAGS.valid_data_path)
         strtime=time.strftime("%Y-%m-%d-%H-%M-%S",time.localtime(time.time()))
-        test_out_name="test-"+strtime
-        valid_out_name="valid-"+strtime
+        test_out_name="test-"+strtime+"-"+str(FLAGS.learning_rate_base)
+        valid_out_name="valid-"+strtime+"-"+str(FLAGS.learning_rate_base)
+        #test_out_name="test-"+strtime
+        #valid_out_name="valid-"+strtime
         test_out=codecs.open(FLAGS.log_data+"/"+test_out_name, "w+",encoding="utf-8")
         valid_out=codecs.open(FLAGS.log_data+"/"+valid_out_name, "w+",encoding="utf-8")
         model.loss(X,Y)

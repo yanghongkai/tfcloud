@@ -17,7 +17,7 @@ def copy_file(filename):
         line=line.strip()
         arr=re.split(r'[;,\s]\s*',line)
         xlist.append(arr[0])
-        ylist.append(arr[2])
+        ylist.append(arr[3])
         #ylist.append(arr[1])
     xlist_=[int(x)/1000 for x in xlist]
 
@@ -36,7 +36,7 @@ def main():
     ty=None
     for filename in filenames_:
         if re.match(r'valid',filename):
-            jpgname=os.path.join(rootdir,filename+".jpg")
+            jpgname=os.path.join(rootdir,filename+"_head1.jpg")
             learning_rate=filename.split('-')[-1]
             filepath=os.path.join(rootdir,filename)
             print(filepath)
@@ -51,8 +51,9 @@ def main():
     #plt.title("valid and test accuracy")
     plt.title("learning_rate_base=%.4f,rate_decay=0.99" % (float(learning_rate)) )
     plt.xlabel('train steps (1000)')
-    plt.ylabel('accuracy %')
+    plt.ylabel('head accuracy %')
     handles,labels=ax.get_legend_handles_labels()
+    #ax.legend(handles[::1],labels[::1],loc='upper right')
     ax.legend(handles[::1],labels[::1],loc='lower right')
     #plt.show()
     plt.savefig(jpgname)

@@ -24,38 +24,30 @@ def copy_file(filename):
     return xlist_,ylist
 
 def main():
-    rootdir='/home/yhk/gitproject/tfcloud/plot/draw/'
+    rootdir='/home/yhk/gitproject/tfcloud/plot/draw_multi/'
     jpgname=""
     filenames=yfile.getFileDir(rootdir)
     filenames_=[filename.split('/')[-1] for filename in filenames]
     #print(filenames_)
+    colors=['bo-','r+-','g*-','kp:','b^--']
     learning_rate=0.0
-    vx=None
-    vy=None
-    tx=None
-    ty=None
-    for filename in filenames_:
-        if re.match(r'valid',filename):
-            jpgname=os.path.join(rootdir,filename+".jpg")
-            learning_rate=filename.split('-')[-1]
-            filepath=os.path.join(rootdir,filename)
-            print(filepath)
-            vx,vy=copy_file(filepath)
-        else:
-            filepath=os.path.join(rootdir,filename)
-            tx,ty=copy_file(filepath)
+    xmax=0
     ax=plt.subplot(1,1,1)
-    vline=ax.plot(vx,vy,'bo-',label='valid')
-    tline=ax.plot(tx,ty,'r+-',label='test')
-    plt.axis([0,len(vx),0,100])
+    for filename,color in zip(filenames_,colors):
+        learning_rate=filename.split('-')[-1]
+        filepath=os.path.join(rootdir,filename)
+        x,y=copy_file(filepath)
+        xmax=len(x)
+        ax.plot(x,y,color,label='learning_rate='+learning_rate)
+    plt.axis([0,xmax,0,100])
     #plt.title("valid and test accuracy")
-    plt.title("learning_rate_base=%.4f,rate_decay=0.99" % (float(learning_rate)) )
+    plt.title("learning_rate_base=0.05,rate_decay=0.99")
     plt.xlabel('train steps (1000)')
     plt.ylabel('accuracy %')
     handles,labels=ax.get_legend_handles_labels()
     ax.legend(handles[::1],labels[::1],loc='lower right')
-    #plt.show()
-    plt.savefig(jpgname)
+    plt.show()
+    #plt.savefig(jpgname)
         
             
 

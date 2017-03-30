@@ -2,12 +2,12 @@
 # coding=utf-8
 
 from __future__ import print_function
-import re
+import matplotlib.pyplot as plt
 
-line='asdf fjdk; afed, fjek,asdf,    foo'
-arr=re.split(r'(;|,|\s)\s*',line)
-print(arr)
-
+x=[1,2,3,4]
+y=[i**2 for i in x]
+plt.plot(x,y,'bo:')
+plt.show()
 
 
 
