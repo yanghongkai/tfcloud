@@ -90,6 +90,7 @@ class Model:
 
     def length(self,data):
         used=tf.sign(tf.reduce_max(tf.abs(data),reduction_indices=2))
+        #used=tf.sign(tf.abs(data))
         # data shape [100,80,50] reduce_max shape [100,80] used shape [100,80]
         length=tf.reduce_sum(used,reduction_indices=1)
         # length shape [100]
@@ -250,9 +251,18 @@ def test_evaluate(sess, inference_op, length_op, transMatrix, inpx, tX, tY, desc
         feed_dict={inpx:tX[i*batchSize:endOff]}
         unary_score_val, test_sequence_length_val=sess.run([inference_op,length_op],feed_dict=feed_dict)
         # unary_score_val shape [100,80,4] test_sequence_length_val shape [100]
+        #print('i:',i*batchSize,'endOff:',endOff)
+        #print(test_sequence_length_val)
+        #idx=0
         for tf_unary_scores_, y_, sequence_length_ in zip(unary_score_val,y,test_sequence_length_val):
             tf_unary_scores_=tf_unary_scores_[:sequence_length_]
             y_=y_[:sequence_length_]
+            if sequence_length_==0:
+                continue
+                #print('idx:',idx)
+                #print('sequence_length_:',sequence_length_)
+                #print('y_ length:',len(y_))
+            #idx+=1
             viterbi_sequence, _ =tf.contrib.crf.viterbi_decode(tf_unary_scores_,transMatrix)
             viterbi_sequence=np.asarray(viterbi_sequence)
             correct=np.sum(np.equal(viterbi_sequence,y_))
