@@ -34,7 +34,7 @@ tf.app.flags.DEFINE_integer('num_tags',16,'BMEO')
 tf.app.flags.DEFINE_integer('num_hidden',100,'hidden unit number')
 tf.app.flags.DEFINE_integer('batch_size',100,'num example per mini batch')
 tf.app.flags.DEFINE_integer('train_steps',50000,'training steps')
-tf.app.flags.DEFINE_float("learning_rate_base",0.1,'learning rate base')
+tf.app.flags.DEFINE_float("learning_rate_base",0.001,'learning rate base')
 tf.app.flags.DEFINE_float("learning_rate_decay",0.99,'learning rate decay')
 
 
@@ -289,7 +289,7 @@ def test_evaluate(sess, inference_op, length_op, transMatrix, inpx, tX, tY, desc
     span=end-start
     print("[%s] Total:%d, Correct:%d, Accuracy:%.3f%%, Time:%.1f" % (desc,total_labels,correct_labels,accuracy,span))
     print("[%s] TotalLine:%d, Correct_lines_1:%d, Accuracy_head1:%.3f%%, Correct_lines_2:%d, Accuracy_head2:%.3f%%, Time:%.1f" % (desc,totalLen,correct_lines_1,accuracy_head1,correct_lines_2,accuracy_head2,span))
-    out.write("%d\t%.3f\t%.3f\t%.3f\t%.3f\t%.1f\n" % (step,learning_rate,accuracy,accuracy_head1,accuracy_head2,span))
+    out.write("%d\t%.4f\t%.3f\t%.3f\t%.3f\t%.1f\n" % (step,learning_rate,accuracy,accuracy_head1,accuracy_head2,span))
 
 
 
@@ -334,9 +334,9 @@ def main(unused_argv):
 
                     _, loss_val, learning_rate, trainsMatrix=sess.run([model.train_op,model.loss,model.learning_rate, model.transition_params ])
                     if step % 100==0:
-                        print("[%d] loss:[%r], learning_rate:%.3f" % (step,loss_val,learning_rate))
+                        print("[%d] loss:[%r], learning_rate:%.4f" % (step,loss_val,learning_rate))
                     if step % 1000==0:
-                        test_evaluate(sess,mvalid.test_unary_score, mvalid.test_sequence_length, trainsMatrix,  mvalid.inpx,vX,vY,"VALID",valid_out,step,learning_rate)
+                        test_evaluate(sess,model.test_unary_score, model.test_sequence_length, trainsMatrix,  model.inpx,vX,vY,"VALID",valid_out,step,learning_rate)
                         test_evaluate(sess,model.test_unary_score, model.test_sequence_length, trainsMatrix,  model.inpx,tX,tY,"TEST",test_out,step,learning_rate)
                 except KeyboardInterrupt, e:
                     valid_out.close()
