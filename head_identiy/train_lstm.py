@@ -34,7 +34,7 @@ tf.app.flags.DEFINE_integer('num_tags',16,'BMEO')
 tf.app.flags.DEFINE_integer('num_hidden',100,'hidden unit number')
 tf.app.flags.DEFINE_integer('batch_size',100,'num example per mini batch')
 tf.app.flags.DEFINE_integer('train_steps',50000,'training steps')
-tf.app.flags.DEFINE_float("learning_rate_base",0.8,'learning rate base')
+tf.app.flags.DEFINE_float("learning_rate_base",0.05,'learning rate base')
 tf.app.flags.DEFINE_float("learning_rate_decay",0.99,'learning rate decay')
 
 
@@ -144,7 +144,7 @@ class Model:
         self.train_op=tf.train.AdamOptimizer(self.learning_rate).minimize(loss,global_step=self.global_step)
 
     def accuracy(self):
-        logits, sequence_length=self.inference(self.inpx, self.reuse, trainMode=False)
+        logits, sequence_length=self.inference(self.inpx, reuse=True, trainMode=False)
         #logits shape [100*80,4]
         logits_=tf.argmax(logits,1)
         logits_reshape=tf.reshape(logits_, [-1, FLAGS.max_sentence_len])
@@ -268,7 +268,7 @@ def test_evaluate(sess, inference_op, length_op, inpx, tX, tY, desc, out,step, l
     span=end-start
     print("[%s] Total:%d, Correct:%d, Accuracy:%.3f%%, Time:%.1f" % (desc,total_labels,correct_labels,accuracy,span))
     print("[%s] TotalLine:%d, Correct_lines_1:%d, Accuracy_head1:%.3f%%, Correct_lines_2:%d, Accuracy_head2:%.3f%%, Time:%.1f" % (desc,totalLen,correct_lines_1,accuracy_head1,correct_lines_2,accuracy_head2,span))
-    out.write("%d\t%.3f\t%.3f\t%.3f\t%.3f\t%.1f\n" % (step,learning_rate,accuracy,accuracy_head1,accuracy_head2,span))
+    out.write("%d\t%.4f\t%.3f\t%.3f\t%.3f\t%.1f\n" % (step,learning_rate,accuracy,accuracy_head1,accuracy_head2,span))
 
 
 
@@ -280,7 +280,7 @@ def main(unused_argv):
     graph=tf.Graph()
     with graph.as_default():
         model=Model(FLAGS.embedding_size,FLAGS.num_tags,FLAGS.word2vec_path,FLAGS.num_hidden,trainMode=True,reuse=False)
-        mvalid=Model(FLAGS.embedding_size,FLAGS.num_tags,FLAGS.word2vec_path,FLAGS.num_hidden,trainMode=False,reuse=True)
+        #mvalid=Model(FLAGS.embedding_size,FLAGS.num_tags,FLAGS.word2vec_path,FLAGS.num_hidden,trainMode=False,reuse=True)
     
         X,Y=inputs(filenames)
         #print(X)
@@ -297,9 +297,9 @@ def main(unused_argv):
         test_out=codecs.open(FLAGS.log_data+"/"+test_out_name, "w+",encoding="utf-8")
         valid_out=codecs.open(FLAGS.log_data+"/"+valid_out_name, "w+",encoding="utf-8")
         model.loss(X,Y)
-        #model.accuracy()
+        model.accuracy()
         #mvalid.loss()
-        mvalid.accuracy()
+        #mvalid.accuracy()
         sv=tf.train.Supervisor(graph=graph,logdir=FLAGS.log_dir)
         with sv.managed_session(master='') as sess:
             training_steps=FLAGS.train_steps
@@ -311,10 +311,10 @@ def main(unused_argv):
 
                     _, loss_val, learning_rate=sess.run([model.train_op,model.loss,model.learning_rate ])
                     if step % 100==0:
-                        print("[%d] loss:[%r], learning_rate:%.3f" % (step,loss_val,learning_rate))
+                        print("[%d] loss:[%r], learning_rate:%.4f" % (step,loss_val,learning_rate))
                     if step % 1000==0:
-                        test_evaluate(sess,mvalid.test_inference, mvalid.test_length, mvalid.inpx,vX,vY,"VALID",valid_out,step,learning_rate)
-                        test_evaluate(sess,mvalid.test_inference, mvalid.test_length, mvalid.inpx,tX,tY,"TEST",test_out,step,learning_rate)
+                        test_evaluate(sess,model.test_inference, model.test_length, model.inpx,vX,vY,"VALID",valid_out,step,learning_rate)
+                        test_evaluate(sess,model.test_inference, model.test_length, model.inpx,tX,tY,"TEST",test_out,step,learning_rate)
                 except KeyboardInterrupt, e:
                     valid_out.close()
                     test_out.close()
